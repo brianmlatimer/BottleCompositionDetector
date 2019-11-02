@@ -11,8 +11,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Brian Code
+        // Brian Code on his own branch
 
-        // Matthew Wen
     }
 }
