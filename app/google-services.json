@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "743730482019",
+    "firebase_url": "https://vandyhacks-dbd1b.firebaseio.com",
+    "project_id": "vandyhacks-dbd1b",
+    "storage_bucket": "vandyhacks-dbd1b.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:743730482019:android:36ab10253587d1ec01a156",
+        "android_client_info": {
+          "package_name": "com.mwen.bottle"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "743730482019-bdp1sdbrmppko2p7cit6plltchc13qrk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBlkgXqi2rFT4pKQ-oeiTbGfQLVjmf9QCU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "743730482019-bdp1sdbrmppko2p7cit6plltchc13qrk.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
