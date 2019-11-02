@@ -18,6 +18,9 @@ import android.widget.Button;
 
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.IgnoreExtraProperties;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
@@ -26,6 +29,34 @@ import java.io.ByteArrayOutputStream;
 import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
+
+    private DatabaseReference mDatabase;
+    private static int BOTTLE_IMG  = 1;
+    private static int PLASTIC_IMG = 2;
+    private static int TRAIN_IMG   = 3;
+    private static String[] BIMG_STRING = {"", "BOTTLE", "PLASTIC", ""};
+
+    @IgnoreExtraProperties
+    public class BIMG{
+
+        public String name;
+        public boolean train;
+        public String type;
+
+        public BIMG() {
+            // Default constructor required for calls to DataSnapshot.getValue(User.class)
+            this.name = "";
+            this.train = false;
+            this.type = BIMG_STRING[0];
+        }
+
+        public BIMG(String name, int type) {
+            this.train = type < 3;
+            this.name = name;
+            this.type = BIMG_STRING[type];
+        }
+
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,7 +72,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                     Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
                     if (intent.resolveActivity((getPackageManager())) != null) {
-                        startActivityForResult(intent, 1); // 1 equals to request image capture
+                        startActivityForResult(intent, BOTTLE_IMG);
                     }
             }
         });
@@ -51,7 +82,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
                 if (intent.resolveActivity((getPackageManager())) != null) {
-                    startActivityForResult(intent, 1); // 1 equals to request image capture
+                    startActivityForResult(intent, PLASTIC_IMG);
                 }
             }
         });
@@ -61,30 +92,38 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
                 if (intent.resolveActivity((getPackageManager())) != null) {
-                    startActivityForResult(intent, 1); // 1 equals to request image capture
+                    startActivityForResult(intent, TRAIN_IMG);
                 }
             }
         });
-        // Brian Code on his own branch
 
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == 1 && resultCode == RESULT_OK) {
+        if (resultCode == RESULT_OK) {
             Log.v("RESULT", "It worked, we got an image");
 
+            assert data != null;
             Bundle bundle = data.getExtras();
+            assert bundle != null;
             Bitmap imagebmp = (Bitmap) bundle.get("data");
 
             FirebaseStorage storage = FirebaseStorage.getInstance();
             StorageReference storageRef = storage.getReference();
 
             Long milliscurr = System.currentTimeMillis();
-            StorageReference imgRef = storageRef.child(milliscurr.toString() + "-" + "mwen");
+            String img_name = milliscurr.toString() + "-" + "mwen";
+
+            mDatabase = FirebaseDatabase.getInstance().getReference();
+            BIMG bmp = new BIMG(img_name, requestCode);
+            mDatabase.child(img_name).setValue(bmp);
+
+            StorageReference imgRef = storageRef.child(img_name);
 
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            assert imagebmp != null;
             imagebmp.compress(Bitmap.CompressFormat.JPEG, 100, baos);
             byte[] img_data = baos.toByteArray();
 
