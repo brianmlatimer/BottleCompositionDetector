@@ -3,6 +3,7 @@ import tensorflow as tf
 import numpy as np
 import firebase_admin
 from firebase_admin import firestore
+from firebase_admin import db
 from firebase_admin import storage
 from cv2 import imread
 import glob
@@ -10,27 +11,28 @@ import os
 
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"]="../vandyhacks-dbd1b-firebase-adminsdk-u7z46-eb00793d1d.json"
 
+
 # Initialize our connection with Firebase
 #credentials = firebase_admin.credentials.ApplicationDefault() # NOTE: only uncomment if using the Google Cloud Shell
 credentials = firebase_admin.credentials.Certificate("../vandyhacks-dbd1b-firebase-adminsdk-u7z46-eb00793d1d.json")
 firebase_admin.initialize_app(credentials, options= {
                                                         'project-id' : 'vandyhacks-dbd1b',
-                                                        'storageBucket' : 'vandyhacks-dbd1b.appspot.com'
+                                                        'storageBucket' : 'vandyhacks-dbd1b.appspot.com',
+                                                        'databaseURL' : 'https://vandyhacks-dbd1b.firebaseio.com'
 })
 
-database = firestore.client()
+ref = db.reference('datasetCategories')
+print(ref.get())
 
-# Get all training labels from the database
-labels = database.collection(u'vandyhacks-dbd1b')
-yTrain = labels.where(u'train', u'==', u'true')
-yTest = labels.where(u'train', u'==', u'false')
+yTrain = ref.order_by_child('train').equal_to(True).get()
+yTest = ref.order_by_child('train').equal_to(False).get()
 
 # Access the Firebase storage and grab all relevant images
 bucket = storage.bucket()
 
 # Get the file locations for the images
-xTrainBlob = bucket.blob("xTrain")
-xTestBlob = bucket.blob("xTest")
+xTrainBlob = bucket.blob("xTrain/")
+xTestBlob = bucket.blob("xTest/")
 
 # Download the xTrain and xTest files onto the local machine
 xTrainBlob.download_to_filename("xTrainFile")
@@ -41,8 +43,8 @@ xTrainGlob = glob.glob("xTrainFile/*.jpg")
 xTestGlob = glob.glob("xTestFile/*.jpg")
 
 # Get placeholders for the xTrain and xTest
-xTrain = np.zeros()
-xTest = np.zeros()
+xTrain = np.zeros(0)
+xTest = np.zeros(0)
 
 # Access each xTrain and xTest image and add them to a uint8 array of RGB images (this is so tensorflow can process them).
 for xTrainFile in xTrainGlob:
