@@ -10,6 +10,7 @@ import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
@@ -29,12 +30,14 @@ import java.io.ByteArrayOutputStream;
 import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
+    private Uri picUri;
 
     private DatabaseReference mDatabase;
     private static int BOTTLE_IMG  = 1;
     private static int PLASTIC_IMG = 2;
     private static int TRAIN_IMG   = 3;
     private static String[] BIMG_STRING = {"", "BOTTLE", "PLASTIC", ""};
+
 
     @IgnoreExtraProperties
     public class BIMG{
@@ -72,7 +75,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                     Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
                     if (intent.resolveActivity((getPackageManager())) != null) {
-                        startActivityForResult(intent, BOTTLE_IMG);
+                        startActivityForResult(intent, BOTTLE_IMG + 5); // 1 equals to request image capture
                     }
             }
         });
@@ -82,7 +85,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
                 if (intent.resolveActivity((getPackageManager())) != null) {
-                    startActivityForResult(intent, PLASTIC_IMG);
+                    startActivityForResult(intent, PLASTIC_IMG + 5); // 1 equals to request image capture
                 }
             }
         });
@@ -92,60 +95,84 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
                 if (intent.resolveActivity((getPackageManager())) != null) {
-                    startActivityForResult(intent, TRAIN_IMG);
+                    startActivityForResult(intent, TRAIN_IMG + 5); // 1 equals to request image capture
                 }
             }
         });
+        // Brian Code on his own branch
 
+    }
+
+    private void performCrop(Bitmap bmp, int request) {
+        Intent cropIntent = new Intent(MediaStore.);
+
+//        cropIntent.setDataAndType(picUri, "image/*");
+        cropIntent.putExtra("data", bmp);
+        cropIntent.putExtra("crop", "true");
+        cropIntent.putExtra("aspectX", 1);
+        cropIntent.putExtra("aspectY", 1);
+        cropIntent.putExtra("outputX", 224);
+        cropIntent.putExtra("outputY", 224);
+
+        cropIntent.putExtra("return-data", true);
+        onActivityResult(request - 5, RESULT_OK, cropIntent);
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (resultCode == RESULT_OK) {
-            Log.v("RESULT", "It worked, we got an image");
+            if (requestCode > 5) {
+                Log.v("RESULT", "It worked, we should perform crop");
+                performCrop((Bitmap) data.getExtras().get("data"), requestCode);
+            }
+            else {
+                Log.v("RESULT", "It worked, we got an image");
 
-            assert data != null;
-            Bundle bundle = data.getExtras();
-            assert bundle != null;
-            Bitmap imagebmp = (Bitmap) bundle.get("data");
+                assert data != null;
+                Bundle bundle = data.getExtras();
+                assert bundle != null;
+                Bitmap imagebmp = (Bitmap) bundle.get("data");
 
-            FirebaseStorage storage = FirebaseStorage.getInstance();
-            StorageReference storageRef = storage.getReference();
+                FirebaseStorage storage = FirebaseStorage.getInstance();
+                StorageReference storageRef = storage.getReference();
 
-            Long milliscurr = System.currentTimeMillis();
-            String img_name = milliscurr.toString() + "-" + "mwen";
+                Long milliscurr = System.currentTimeMillis();
+                String img_name = milliscurr.toString() + "-" + "mwen";
 
-            mDatabase = FirebaseDatabase.getInstance().getReference();
-            BIMG bmp = new BIMG(img_name, requestCode);
-            mDatabase.child(img_name).setValue(bmp);
+                mDatabase = FirebaseDatabase.getInstance().getReference();
+                BIMG bmp = new BIMG(img_name, requestCode);
+                mDatabase.child(img_name).setValue(bmp);
 
-            StorageReference imgRef = storageRef.child(img_name);
+                StorageReference imgRef = storageRef.child(img_name);
 
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            assert imagebmp != null;
-            imagebmp.compress(Bitmap.CompressFormat.JPEG, 100, baos);
-            byte[] img_data = baos.toByteArray();
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                assert imagebmp != null;
+                imagebmp.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+                byte[] img_data = baos.toByteArray();
 
-            UploadTask uploadTask = imgRef.putBytes(img_data);
-            uploadTask.addOnFailureListener(new OnFailureListener() {
-                @Override
-                public void onFailure(@NonNull Exception exception) {
-                    // Handle unsuccessful uploads
-                    Log.v("SUHANA", "It failed Nicholas Foster");
-                }
-            }).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
-                @Override
-                public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                    // taskSnapshot.getMetadata() contains file metadata such as size, content-type, etc.
-                    // ...
-                    Log.v("SUHANA", "It worked Nicholas Foster");
-                }
-            });
+                UploadTask uploadTask = imgRef.putBytes(img_data);
+                uploadTask.addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception exception) {
+                        // Handle unsuccessful uploads
+                        Log.v("SUHANA", "It failed Nicholas Foster");
+                    }
+                }).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                    @Override
+                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                        // taskSnapshot.getMetadata() contains file metadata such as size, content-type, etc.
+                        // ...
+                        Log.v("SUHANA", "It worked Nicholas Foster");
+                    }
+                });
 
-
+            }
         }
+
     }
+
+
 }
 
 
