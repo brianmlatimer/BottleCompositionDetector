@@ -104,7 +104,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void performCrop(Bitmap bmp, int request) {
-        Intent cropIntent = new Intent(MediaStore.);
+        Intent cropIntent = new Intent("com.android.camera.action.CROP");
 
 //        cropIntent.setDataAndType(picUri, "image/*");
         cropIntent.putExtra("data", bmp);
