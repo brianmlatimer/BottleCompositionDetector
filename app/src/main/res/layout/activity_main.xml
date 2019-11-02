@@ -45,6 +45,13 @@
         android:text="Take Picture of PLASTIC Bottle"
         android:textAllCaps="false"
         android:layout_gravity="center_vertical|center_horizontal" />
+    <Button
+        android:id="@+id/button3"
+        android:layout_width="match_parent"
+        android:layout_height="150px"
+        android:text="Test"
+        android:textAllCaps="false"
+        android:layout_gravity="center_vertical|center_horizontal" />
 
 
 

@@ -55,6 +55,16 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+        Button b3 = findViewById(R.id.button3);
+        b3.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                if (intent.resolveActivity((getPackageManager())) != null) {
+                    startActivityForResult(intent, 1); // 1 equals to request image capture
+                }
+            }
+        });
         // Brian Code on his own branch
 
     }
