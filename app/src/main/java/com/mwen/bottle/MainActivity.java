@@ -1,5 +1,6 @@
 package com.mwen.bottle;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -14,6 +15,15 @@ import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
+
+import java.io.ByteArrayOutputStream;
+import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -41,10 +51,40 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == 1 && resultCode == RESULT_OK) {
             Log.v("RESULT", "It worked, we got an image");
+
             Bundle bundle = data.getExtras();
-            Bitmap imagebmp = (Bitmap) bundle.get("data"); 
+            Bitmap imagebmp = (Bitmap) bundle.get("data");
+
+            FirebaseStorage storage = FirebaseStorage.getInstance();
+            StorageReference storageRef = storage.getReference();
+
+            Long milliscurr = System.currentTimeMillis();
+            StorageReference imgRef = storageRef.child(milliscurr.toString() + "-" + "mwen");
+
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            imagebmp.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+            byte[] img_data = baos.toByteArray();
+
+            UploadTask uploadTask = imgRef.putBytes(img_data);
+            uploadTask.addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(@NonNull Exception exception) {
+                    // Handle unsuccessful uploads
+                    Log.v("SUHANA", "It failed Nicholas Foster");
+                }
+            }).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                @Override
+                public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                    // taskSnapshot.getMetadata() contains file metadata such as size, content-type, etc.
+                    // ...
+                    Log.v("SUHANA", "It worked Nicholas Foster");
+                }
+            });
+
+
         }
     }
 }
