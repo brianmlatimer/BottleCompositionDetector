@@ -4,18 +4,24 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.core.app.NavUtils;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 
 import android.Manifest;
+import android.content.ActivityNotFoundException;
+import android.content.ContentProvider;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -25,11 +31,18 @@ import com.google.firebase.database.IgnoreExtraProperties;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
+import com.theartofdev.edmodo.cropper.CropImage;
+import com.theartofdev.edmodo.cropper.CropImageView;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
+
     private Uri picUri;
 
     private DatabaseReference mDatabase;
@@ -61,97 +74,95 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    protected void get_picture(int type) {
+        Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        if (intent.resolveActivity((getPackageManager())) != null) {
+            File photo = null;
+            try {
+                // add the name here
+                Log.v("MWEN", "creating temp photo");
+                photo = createImageFile(type);
+            } catch (IOException ex) {
+                // catch error
+            }
+
+            if (photo != null) {
+                Uri photoUri = FileProvider.getUriForFile(MainActivity.this,
+                        "com.example.android.fileprovider",
+                        photo);
+                intent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
+                startActivityForResult(intent, 0);
+
+            }
+        }
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-//        if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_DENIED)
-//        {
-//            ActivityCompat.requestPermissions(activity, new String[] {Manifest.permission.CAMERA}, requestCode);
-//        }
         Button b = findViewById(R.id.button1);
         b.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                    Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                    if (intent.resolveActivity((getPackageManager())) != null) {
-                        startActivityForResult(intent, BOTTLE_IMG + 5); // 1 equals to request image capture
-                    }
+                get_picture(BOTTLE_IMG);
             }
         });
         Button b2 = findViewById(R.id.button2);
         b2.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                if (intent.resolveActivity((getPackageManager())) != null) {
-                    startActivityForResult(intent, PLASTIC_IMG + 5); // 1 equals to request image capture
-                }
+                get_picture(PLASTIC_IMG);
             }
         });
         Button b3 = findViewById(R.id.button3);
         b3.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                if (intent.resolveActivity((getPackageManager())) != null) {
-                    startActivityForResult(intent, TRAIN_IMG + 5); // 1 equals to request image capture
-                }
+                get_picture(TRAIN_IMG);
             }
         });
-        // Brian Code on his own branch
 
     }
 
-    private void performCrop(Bitmap bmp, int request) {
-        Intent cropIntent = new Intent(MediaStore.);
+    String currentPhotoPath;
+    private File createImageFile(int type) throws IOException {
+        // Create an image file name
+        Long milliscurr = System.currentTimeMillis();
+        String img_name = milliscurr.toString() + "-" + "mwen";
 
-//        cropIntent.setDataAndType(picUri, "image/*");
-        cropIntent.putExtra("data", bmp);
-        cropIntent.putExtra("crop", "true");
-        cropIntent.putExtra("aspectX", 1);
-        cropIntent.putExtra("aspectY", 1);
-        cropIntent.putExtra("outputX", 224);
-        cropIntent.putExtra("outputY", 224);
+        mDatabase = FirebaseDatabase.getInstance().getReference();
+        BIMG bmp = new BIMG(img_name, type);
+        mDatabase.child(img_name).setValue(bmp);
 
-        cropIntent.putExtra("return-data", true);
-        onActivityResult(request - 5, RESULT_OK, cropIntent);
+        File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+        File image = File.createTempFile(
+                img_name,  /* prefix */
+                ".jpg",         /* suffix */
+                storageDir      /* directory */
+        );
+
+        // Save a file: path for use with ACTION_VIEW intents
+        currentPhotoPath = image.getAbsolutePath();
+        Log.v("MWEN", "Absolute Path: " + currentPhotoPath);
+        return image;
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (resultCode == RESULT_OK) {
-            if (requestCode > 5) {
-                Log.v("RESULT", "It worked, we should perform crop");
-                performCrop((Bitmap) data.getExtras().get("data"), requestCode);
-            }
-            else {
-                Log.v("RESULT", "It worked, we got an image");
-
-                assert data != null;
-                Bundle bundle = data.getExtras();
-                assert bundle != null;
-                Bitmap imagebmp = (Bitmap) bundle.get("data");
+            if (requestCode == CropImage.CROP_IMAGE_ACTIVITY_REQUEST_CODE) {
+                  CropImage.ActivityResult result = CropImage.getActivityResult(data);
 
                 FirebaseStorage storage = FirebaseStorage.getInstance();
                 StorageReference storageRef = storage.getReference();
 
-                Long milliscurr = System.currentTimeMillis();
-                String img_name = milliscurr.toString() + "-" + "mwen";
-
-                mDatabase = FirebaseDatabase.getInstance().getReference();
-                BIMG bmp = new BIMG(img_name, requestCode);
-                mDatabase.child(img_name).setValue(bmp);
-
+                // look at last index of username character.
+                String img_name = currentPhotoPath.substring(currentPhotoPath.lastIndexOf("n") + 1, currentPhotoPath.lastIndexOf(".")) + "-" + "mwen";
                 StorageReference imgRef = storageRef.child(img_name);
 
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                assert imagebmp != null;
-                imagebmp.compress(Bitmap.CompressFormat.JPEG, 100, baos);
-                byte[] img_data = baos.toByteArray();
-
-                UploadTask uploadTask = imgRef.putBytes(img_data);
+                UploadTask uploadTask = imgRef.putFile(result.getUri());
                 uploadTask.addOnFailureListener(new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception exception) {
@@ -168,10 +179,18 @@ public class MainActivity extends AppCompatActivity {
                 });
 
             }
+            else {
+                Log.v("RESULT", "It worked, we should perform crop");
+                CropImage.activity(Uri.fromFile(new File(currentPhotoPath)))
+                        .setActivityTitle("Crop Image")
+                        .setCropShape(CropImageView.CropShape.RECTANGLE)
+                        .setAspectRatio(1, 1)
+                        .setFixAspectRatio(true)
+                        .setRequestedSize(224, 224)
+                        .start(this);
+            }
         }
-
     }
-
 
 }
 

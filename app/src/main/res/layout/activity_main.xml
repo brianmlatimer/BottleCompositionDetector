@@ -18,7 +18,6 @@
 <!--        app:layout_constraintTop_toTopOf="parent" />-->
 
     <ImageView
-        android:id="@+id/imageView1"
         android:layout_width="500px"
         android:layout_height="300px"
         android:layout_gravity="center_vertical|center_horizontal"
