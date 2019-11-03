@@ -101,6 +101,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    boolean display_result;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -125,12 +126,14 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 get_picture(TRAIN_IMG);
+                display_result = true;
             }
         });
 
     }
 
     String currentPhotoPath;
+    String name;
     private File createImageFile(int type) throws IOException {
         // Create an image file name
         Long milliscurr = System.currentTimeMillis();
@@ -141,6 +144,7 @@ public class MainActivity extends AppCompatActivity {
         mDatabase.child(img_name).setValue(bmp);
 
         File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+        name = img_name;
         File image = File.createTempFile(
                 img_name,  /* prefix */
                 ".jpg",         /* suffix */
@@ -164,7 +168,7 @@ public class MainActivity extends AppCompatActivity {
                 StorageReference storageRef = storage.getReference();
 
                 // look at last index of username character.
-                String img_name = currentPhotoPath.substring(currentPhotoPath.lastIndexOf("n") + 1, currentPhotoPath.lastIndexOf(".")) + "-" + "mwen";
+                String img_name = name;
                 StorageReference imgRef = storageRef.child(img_name);
 
                 UploadTask uploadTask = imgRef.putFile(result.getUri());
@@ -183,6 +187,11 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
 
+                if (display_result) {
+                    displayResult();
+                    display_result = false;
+                }
+
             }
             else {
                 Log.v("RESULT", "It worked, we should perform crop");
@@ -197,6 +206,22 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void displayResult() {
+        boolean isGlass = false;
+
+        if (isGlass) {
+            Intent i = new Intent(getBaseContext(), GlassActivity.class);
+            startActivity(i);
+        } else {
+            Intent i = new Intent(getBaseContext(), PlasticActivity.class);
+            startActivity(i);
+        }
+    }
+
+    @Override
+    public void onBackPressed() {
+        finish();
+    }
 }
 
 
