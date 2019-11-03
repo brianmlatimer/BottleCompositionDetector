@@ -5,9 +5,17 @@ import firebase_admin
 from firebase_admin import firestore
 from firebase_admin import db
 from firebase_admin import storage
-from cv2 import imread
+import cv2
 import glob
 import os
+import threading
+
+def convertBlobToNPArr(xGlob, xSet):
+    for xFile in xGlob:
+        xImg = cv2.imread(xFile)
+        np.resize(xImg, (224, 224, 3))  # TODO: TEMOPORARY
+        xSet = np.append(xSet, xImg)
+
 
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"]="../vandyhacks-dbd1b-firebase-adminsdk-u7z46-eb00793d1d.json"
 
@@ -27,40 +35,87 @@ print(ref.get())
 yTrain = ref.order_by_child('train').equal_to(True).get()
 yTest = ref.order_by_child('train').equal_to(False).get()
 
-# Access the Firebase storage and grab all relevant images
-bucket = storage.bucket()
+# Turn yTrain and yTest into dicts from orderedDicts, then turn into a string
 
-# Get the file locations for the images
-xTrainBlob = bucket.blob("xTrain/")
-xTestBlob = bucket.blob("xTest/")
 
-# Download the xTrain and xTest files onto the local machine
-xTrainBlob.download_to_filename("xTrainFile")
-xTestBlob.download_to_filename("xTestFile")
+# # Access the Firebase storage and grab all relevant images
+# bucket = storage.bucket()
+#
+# # Download all images available
+#
+#
+# # Get the file locations for the images
+# xTrainBlobGlass = bucket.blob("xTrain/glass{i}.jpg")
+# xTrainBlobPlastic = bucket.blob("xTrain/plastic{i}.jpg")
+# xTestBlobGlass = bucket.blob("xTest/glass{k}.jpg")
+# xTestBlobPlastic = bucket.blob("xTest/plastic{k}.jpg")
+#
+# # Download the xTrain and xTest files onto the local machine
+#
+# xTrainBlobGlass.download_to_filename("xTrainFileGlass.jpg")
+# xTrainBlobPlastic.download_to_filename("xTrainFilePlastic.jpg")
+#
+# # TODO: Remove print outputs
+# print('Blob {} downloaded to {}.'.format(
+#         xTrainBlob,
+#         "xTrainFile"))
 
 # Access the xTrain and xTest files
-xTrainGlob = glob.glob("xTrainFile/*.jpg")
-xTestGlob = glob.glob("xTestFile/*.jpg")
+xTrainGlob = glob.glob("xTrain/*.jpg")
+xTestGlob = glob.glob("xTest/*.jpg")
 
 # Get placeholders for the xTrain and xTest
 xTrain = np.zeros(0)
 xTest = np.zeros(0)
-
+print("\n")
+print("Test0")
 # Access each xTrain and xTest image and add them to a uint8 array of RGB images (this is so tensorflow can process them).
-for xTrainFile in xTrainGlob:
-    xTrainImg = imread(xTrainFile)
-    np.append(xTrain, xTrainImg)
+t1 = threading.Thread(target=convertBlobToNPArr, args=(xTrainGlob, xTrain))
+t2 = threading.Thread(target=convertBlobToNPArr, args=(xTestGlob, xTest))
 
-for xTestFile in xTestGlob:
-    xTestImg = imread(xTestFile)
-    np.append(xTest, xTestImg)
+# Start threading
+t1.start()
+t2.start()
 
+# End threading when finished
+t1.join()
+t2.join()
+print("Done!")
+# for xTrainFile in xTrainGlob:
+#     xTrainImg = cv2.imread(xTrainFile)
+#     np.resize(xTrainImg, (224, 224, 3)) #TODO: TEMOPORARY
+#     xTrain = np.append(xTrain, xTrainImg)
+#     print(xTrainFile)
+# print("Test1")
+# for xTestFile in xTestGlob:
+#     xTestImg = cv2.imread(xTestFile)
+#     xTestImg.resize((224, 224, 3)) #TODO: TEMPORARY
+#     xTest = np.append(xTest, xTestImg)
+#     print(xTestFile)
+# print("Test2")
+yTrainReal = yTestReal = []
 
-xTrain, xTest = xTrain / 255.0, xTest / 255.0
+# Convert yTest and yTrain from nested orderedDicts to an array of classifications (0 = BOTTLE, 1 = PLASTIC)
+for x in (list(yTrain.items())):
+    pictureName = x[1]['name']
+    if (pictureName[0] == 'p'):
+        yTrainReal.append(1)
+    else:
+        yTrainReal.append(0)
+
+for j, w in enumerate(list(yTrain.items())):
+    isPlastic = w[1]['name']
+    if (isPlastic[0] == 'p'):
+        yTrainReal.append(1)
+    else:
+        yTrainReal.append(0)
+
+#xTrain, xTest = xTrain / 255.0, xTest / 255.0
 
 # Change the training labels to one-hot encoding
-yTrain = tf.keras.utils.to_categorical(yTrain)
-yTest = tf.keras.utils.to_categorical(yTest)
+yTrainReal = tf.keras.utils.to_categorical(yTrainReal)
+yTestReal = tf.keras.utils.to_categorical(yTestReal)
+
 
 #model = tf.keras.models.Sequential([
   #tf.keras.layers.Flatten(input_shape=(32, 32, 3)),
@@ -85,6 +140,10 @@ model = tf.keras.applications.VGG16()
 
 model.compile(optimizer="SGD", loss="sparse_categorical_crossentropy", metrics=["accuracy"])
 
-model.fit(xTrain, yTrain, epochs=10)
+print(xTrain)
+print(yTrainReal)
+print("Test")
 
-model.evaluate(xTest,  yTest, verbose=2)
+model.fit(xTrain, yTrainReal, epochs=10)
+
+model.evaluate(xTest,  yTestReal, verbose=2)

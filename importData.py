@@ -68,9 +68,3 @@ for i in range(1, 482):
         #database.collection(u'vandyhacks-dbd1b').document(line[0:-2]).set(data)
 
 fptr.close()
-
-
-
-
-
-
