@@ -33,7 +33,7 @@ subResponse = messaging.subscribe_to_topic(registrationToken, topic)
 ref = db.reference('datasetCategories')
 print(ref.get())
 
-model = tf.keras.applications.VGG16(weights="convNetWeights")
+model = tf.keras.applications.VGG16(weights="")
 
 model.compile(optimizer="SGD", loss="sparse_categorical_crossentropy", metrics=["accuracy"])
 
