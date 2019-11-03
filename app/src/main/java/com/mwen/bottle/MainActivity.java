@@ -7,15 +7,21 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
+import android.media.ExifInterface;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -27,6 +33,8 @@ import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
@@ -65,15 +73,12 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-//        if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_DENIED)
-//        {
-//            ActivityCompat.requestPermissions(activity, new String[] {Manifest.permission.CAMERA}, requestCode);
-//        }
+
         Button b = findViewById(R.id.button1);
         b.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                    Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
                     if (intent.resolveActivity((getPackageManager())) != null) {
                         startActivityForResult(intent, BOTTLE_IMG + 5); // 1 equals to request image capture
                     }
@@ -97,6 +102,7 @@ public class MainActivity extends AppCompatActivity {
                 if (intent.resolveActivity((getPackageManager())) != null) {
                     startActivityForResult(intent, TRAIN_IMG + 5); // 1 equals to request image capture
                 }
+
             }
         });
         // Brian Code on his own branch
@@ -105,7 +111,6 @@ public class MainActivity extends AppCompatActivity {
 
     private void performCrop(Bitmap bmp, int request) {
         Intent cropIntent = new Intent("com.android.camera.action.CROP");
-
 //        cropIntent.setDataAndType(picUri, "image/*");
         cropIntent.putExtra("data", bmp);
         cropIntent.putExtra("crop", "true");
@@ -171,8 +176,6 @@ public class MainActivity extends AppCompatActivity {
         }
 
     }
-
-
 }
 
 
