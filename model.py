@@ -11,10 +11,14 @@ import os
 import threading
 
 def convertBlobToNPArr(xGlob, xSet):
-    for xFile in xGlob:
+    xGlob.sort()
+    for i, xFile in enumerate(xGlob):
         xImg = cv2.imread(xFile)
-        np.resize(xImg, (224, 224, 3))  # TODO: TEMOPORARY
-        xSet = np.append(xSet, xImg)
+        print(xImg.shape)
+        xImg = np.resize(xImg, (224, 224, 3))  # TODO: TEMOPORARY
+        #print(xSet)
+        xSet.append(xImg) 
+        #print(xFile, len(xSet))
 
 
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"]="../vandyhacks-dbd1b-firebase-adminsdk-u7z46-eb00793d1d.json"
@@ -65,8 +69,8 @@ xTrainGlob = glob.glob("xTrain/*.jpg")
 xTestGlob = glob.glob("xTest/*.jpg")
 
 # Get placeholders for the xTrain and xTest
-xTrain = np.zeros(0)
-xTest = np.zeros(0)
+xTrain = []
+xTest = []
 print("\n")
 print("Test0")
 # Access each xTrain and xTest image and add them to a uint8 array of RGB images (this is so tensorflow can process them).
@@ -93,7 +97,8 @@ print("Done!")
 #     xTest = np.append(xTest, xTestImg)
 #     print(xTestFile)
 # print("Test2")
-yTrainReal = yTestReal = []
+yTrainReal = []
+yTestReal = []
 
 # Convert yTest and yTrain from nested orderedDicts to an array of classifications (0 = BOTTLE, 1 = PLASTIC)
 for x in (list(yTrain.items())):
@@ -103,18 +108,18 @@ for x in (list(yTrain.items())):
     else:
         yTrainReal.append(0)
 
-for j, w in enumerate(list(yTrain.items())):
+for j, w in enumerate(list(yTest.items())):
     isPlastic = w[1]['name']
     if (isPlastic[0] == 'p'):
-        yTrainReal.append(1)
+        yTestReal.append(1)
     else:
-        yTrainReal.append(0)
+        yTestReal.append(0)
 
 #xTrain, xTest = xTrain / 255.0, xTest / 255.0
 
 # Change the training labels to one-hot encoding
-yTrainReal = tf.keras.utils.to_categorical(yTrainReal)
-yTestReal = tf.keras.utils.to_categorical(yTestReal)
+#yTrainReal = tf.keras.utils.to_categorical(yTrainReal)
+#yTestReal = tf.keras.utils.to_categorical(yTestReal)
 
 
 #model = tf.keras.models.Sequential([
@@ -144,6 +149,11 @@ print(xTrain)
 print(yTrainReal)
 print("Test")
 
+xTrain = np.asarray(xTrain)
+xTest = np.asarray(xTest)
+
 model.fit(xTrain, yTrainReal, epochs=10)
 
-model.evaluate(xTest,  yTestReal, verbose=2)
+model.evaluate(xTest, yTestReal, verbose=2)
+
+model.save_weights("convNetWeights")
