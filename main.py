@@ -23,29 +23,39 @@ firebase_admin.initialize_app(credentials, options= {
                                                         'databaseURL' : 'https://vandyhacks-dbd1b.firebaseio.com'
 })
 
-# Subscribe to the topic used for communication
-topic = 'bcdMessaging' # bcd stands for our project, BottleCompositionDetector
+while (True):
+    # Subscribe to the topic used for communication
+    topic = 'bcdMessaging' # bcd stands for our project, BottleCompositionDetector
 
-registrationToken = 'AAAArSnKi2M:APA91bGEnpiiHpihogal7C5A34sLBcr8fPThAGHh1lr-s_DnWhAlm2_ODdWaoFmHdqVqX3KmElJBX_rKVjf_tsmQKBaduyNFfbPbF4B1c4gfZA-LgKruYgN7Eg0zPnBBbH0VcAGhMN3j'
+    registrationToken = 'AAAArSnKi2M:APA91bGEnpiiHpihogal7C5A34sLBcr8fPThAGHh1lr-s_DnWhAlm2_ODdWaoFmHdqVqX3KmElJBX_rKVjf_tsmQKBaduyNFfbPbF4B1c4gfZA-LgKruYgN7Eg0zPnBBbH0VcAGhMN3j'
 
-subResponse = messaging.subscribe_to_topic(registrationToken, topic)
+    subResponse = messaging.subscribe_to_topic(registrationToken, topic)
 
-ref = db.reference('datasetCategories')
-print(ref.get())
+    ref = db.reference('messageVH')
 
-#model = tf.keras.applications.VGG16(weights="")
-model = tf.keras.models.load_model("convNetModel.h5")
+    name = ref['name']
 
-model.compile(optimizer="SGD", loss="sparse_categorical_crossentropy", metrics=["accuracy"])
+    bucket = storage.bucket()
 
-prediction = model.predict(inputFile) # Prediction that comes from our pre-trained neural network
+    imageBlob = bucket.blob(name)
 
-# Send data over to Android App
-message = messaging.Message(
-    data = {
-        'isPlastic' : prediction
-    },
-    topic = topic,
-)
+    imageBlob.download_to_filename("imageToRead.jpg")
 
-dataSend = messaging.send(message)
+    inputFile = cv2.imread("imageToRead.jpg")
+
+    #model = tf.keras.applications.VGG16(weights="")
+    model = tf.keras.models.load_model("convNetModel.h5")
+
+    model.compile(optimizer="SGD", loss="sparse_categorical_crossentropy", metrics=["accuracy"])
+
+    prediction = model.predict(inputFile) # Prediction that comes from our pre-trained neural network
+
+    # Send data over to Android App
+    message = messaging.Message(
+        data = {
+            'isPlastic' : prediction
+        },
+        topic = topic,
+    )
+
+    dataSend = messaging.send(message)
