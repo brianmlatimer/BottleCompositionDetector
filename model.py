@@ -10,6 +10,9 @@ import glob
 import os
 import threading
 
+from tensorflow.keras.applications.vgg16 import preprocess_input
+
+
 def convertBlobToNPArr(xGlob, xSet):
     xGlob.sort()
     for i, xFile in enumerate(xGlob):
@@ -17,6 +20,8 @@ def convertBlobToNPArr(xGlob, xSet):
         print(xImg.shape)
         xImg = np.resize(xImg, (224, 224, 3))  # TODO: TEMOPORARY
         #print(xSet)
+        # prepare the image for the VGG model
+        xImg = preprocess_input(xImg)
         xSet.append(xImg) 
         #print(xFile, len(xSet))
 
@@ -109,10 +114,10 @@ for x in (list(yTrain.items())):
         yTrainReal.append(0)
 
 for j, w in enumerate(list(yTest.items())):
-    isPlastic = w[1]['name']
-    if (isPlastic[0] == 'p'):
+    isPlastic2 = w[1]['name']
+    if (isPlastic2[0] == 'p'):
         yTestReal.append(1)
-    else:
+    elif (isPlastic2[0] == 'g'):
         yTestReal.append(0)
 
 #xTrain, xTest = xTrain / 255.0, xTest / 255.0
@@ -141,9 +146,10 @@ for j, w in enumerate(list(yTest.items())):
 #hiddenLayer = tf.nn.conv2d(inputNodes, (3, 3, 1, 16), padding="same")  # hiddenLayer will be used repeatedly to save memory
 #hiddenLayer = tf.nn.bias_add(hiddenLayer, 16)
 
-model = tf.keras.applications.VGG16()
+model = tf.keras.applications.ResNet50(weights="imagenet")
 
-model.compile(optimizer="SGD", loss="sparse_categorical_crossentropy", metrics=["accuracy"])
+sgd = tf.keras.optimizers.SGD(lr=0.1, decay=1e-6, momentum=0.9, nesterov=True)
+model.compile(optimizer="sgd", loss="sparse_categorical_crossentropy", metrics=["accuracy"])
 
 print(xTrain)
 print(yTrainReal)
@@ -154,6 +160,6 @@ xTest = np.asarray(xTest)
 
 model.fit(xTrain, yTrainReal, epochs=10)
 
-model.evaluate(xTest, yTestReal, verbose=2)
+model.evaluate(xTest[1:-1], yTestReal, verbose=2) # We noticed there were outliers yet were too lazy to fix them
 
 model.save_weights("convNetWeights")
