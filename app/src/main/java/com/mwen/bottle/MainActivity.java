@@ -28,11 +28,16 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.IgnoreExtraProperties;
+import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.iid.InstanceIdResult;
+import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
@@ -102,6 +107,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     boolean display_result;
+    String token;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -129,6 +135,16 @@ public class MainActivity extends AppCompatActivity {
                 display_result = true;
             }
         });
+
+        FirebaseMessaging.getInstance().subscribeToTopic("weather")
+                .addOnCompleteListener(new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+
+                    }
+
+                });
+
 
     }
 
@@ -188,7 +204,7 @@ public class MainActivity extends AppCompatActivity {
                 });
 
                 if (display_result) {
-                    displayResult();
+                    //displayResult();
                     display_result = false;
                 }
 
@@ -206,7 +222,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void displayResult() {
+    protected void displayResult() {
         boolean isGlass = false;
 
         if (isGlass) {
